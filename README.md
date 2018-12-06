@@ -1,9 +1,9 @@
 # ControlAmbiental
 Control Ambiental con el mid-range PIC16F886 de Microchip
 
-## Explicación ## 
+# Explicación # 
 
-# Pines de entrada
+## Pines de entrada ##
 Tenemos conectados al PIC 4 sensores:
  1. Termómetro interior -> Conectado a RA0 [MCP9700]
  2. Termómetro exterior -> Conectado a RA1 [MCP9700]
@@ -12,13 +12,13 @@ Tenemos conectados al PIC 4 sensores:
 
 Por los pines, el micro recibe una señal acondicionada que tenemos que recoger cada 5 segundos, hacerle un tratamiento determinado y mandarla por la USART (para imprimirla).
 
- --- Tratamiento determinado ---  
+#### Tratamiento determinado ####
 · Termómetros: El tratamiento está determinado en el manual del sensor (MCP9700)  
 · Higrómetro:  El tratamiento está determinado en el manual del sensor(HIH-4000)  
 · Luxómetro    Hace falta dividir por 3,8x10^−4 el voltaje (en voltios) suministrado por el sensor.  
 
 
-# Pines de salida
+## Pines de salida ##
 Además, habrá un potenciómetro para que el usuario pueda establecer una consigna de temperatura (una temperatura objetivo)  
 Ese potenciómetro determinará si activar un refrigerador o un ventilador.  
 Regrigerador -> Conectado al pin RC1  
