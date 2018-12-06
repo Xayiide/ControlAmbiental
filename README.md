@@ -13,9 +13,9 @@ Tenemos conectados al PIC 4 sensores:
 Por los pines, el micro recibe una señal acondicionada que tenemos que recoger cada 5 segundos, hacerle un tratamiento determinado y mandarla por la USART (para imprimirla).
 
  --- Tratamiento determinado ---  
-Termómetros: El tratamiento está determinado en el manual del sensor (MCP9700)  
-Higrómetro: El tratamiento está determinado en el manual del sensor(HIH-4000)  
-Luxómetro: Hace falta dividir por 3,8x10^−4 el voltaje (en voltios) suministrado por el sensor.  
+· Termómetros: El tratamiento está determinado en el manual del sensor (MCP9700)  
+· Higrómetro:  El tratamiento está determinado en el manual del sensor(HIH-4000)  
+· Luxómetro    Hace falta dividir por 3,8x10^−4 el voltaje (en voltios) suministrado por el sensor.  
 
 
 # Pines de salida
