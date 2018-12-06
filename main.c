@@ -39,7 +39,8 @@ char int_lum_imprimir;
 // ###### USART ######
 
 void enviar_valores_usart() {
-    
+    /* Para mandar por la USART:
+       TXREG = 8-bit-value */
 }
 
 
