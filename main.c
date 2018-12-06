@@ -1,82 +1,5 @@
 
 /*
- ¿Qué necesitamos hacer para empezar el proyecto?
- -> Hardware Externo [Periféricos]:
-    · Termómetro interior 
-    · Termómetro exterior
-    · Higrómetro
-    · Luxómetro
-    
-    - Regrigerador
-    - Calefactor
-    - Ventilador
-
- */
-
-/*
- =~=~=~=~=~=~=~=~=~=~=
- Termómetro interior
- =~=~=~=~=~=~=~=~=~=~=
- * Conectado a:
- * Función: Imprime su valor y además manda valores a Regrigerador, Calefactor y Ventilador
-
- */
-
-/*
- =~=~=~=~=~=~=~=~=~=~=
- Termómetro exterior
- =~=~=~=~=~=~=~=~=~=~=
- * Conectado a:
- * Función: Sólo imprime su valor
- 
- */
-
-/*
- =~=~=~=~=~=~=~=~=~=~=
- Higrómetro
- =~=~=~=~=~=~=~=~=~=~=
- * Conectado a:
- * Función: Sólo imprime su valor
-
- */
-
-/*
- =~=~=~=~=~=~=~=~=~=~=
- Luxómetro
- =~=~=~=~=~=~=~=~=~=~=
- * Conectado a:
- * Función: Sólo imprime su valor
-  
- */
-
-/*
- =~=~=~=~=~=~=~=~=~=~=
- Refrigerador
- =~=~=~=~=~=~=~=~=~=~=
- * Conectado a:
- * Función:
-
- */
-
-/*
- =~=~=~=~=~=~=~=~=~=~=
- Calefactor
- =~=~=~=~=~=~=~=~=~=~=
- * Conectado a:
- * Función:
-
- */ 
-
-/*
- =~=~=~=~=~=~=~=~=~=~=
- Ventilador 
- =~=~=~=~=~=~=~=~=~=~=
- * Conectado a:
- * Función:
-
- */
-
-/*
  #  HW1  #                                           ___
  #       #   1 ----- Activación Refrigerador ----->  |O| ---> RC1 / T1OSI / CCP2
  #       #   2 ----- PWM Ventilador -------------->  |O| ---> RC2 / P1A / CCP1
@@ -87,21 +10,6 @@
  #       #   7 ----- Sensor Intensidad Luminosa -->  |O| ---> C1IN+ / Vref+ / AN3 / RA3
  #       #   8 ----- Potenciómetro Consigna Temp ->  |O| ---> SS / C2OUT / AN4 / RA5
  # # # # #                                           ¯¯¯
- */
-
-/*
- ¿De dónde coño nos mandan la humedad?
-  -> La humedad la manda HW a través de CVref / C2IN1+ / Vref- / AN2 / RA2
- ¿En qué formato nos lo manda? (Señal luego tenemos que convertirla a digital / Valor ya digital (float?)) 
- Leemos la humedad desde RA2, es decir, el tercer bit del puerto A. Tenemos que inicializar ese bit a 
- 
- */
-
-
-/*
- TODO:
- * Leer de donde sea que tengamos que leer la humedad/temperatura exterior/intensidad luminosa
- * y mandar por la USART lo que leamos 
  */
 
 #include <xc.h>
