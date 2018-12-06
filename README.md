@@ -20,7 +20,7 @@ Por los pines, el micro recibe una señal acondicionada que tenemos que recoger 
 
 ## Pines de salida ##
 Además, habrá un potenciómetro para que el usuario pueda establecer una consigna de temperatura (una temperatura objetivo)  
-Ese potenciómetro determinará si activar un refrigerador o un ventilador.  
+Ese potenciómetro determinará si activar un refrigerador o un calefactor.  
 Regrigerador -> Conectado al pin RC1  
 Calefactor   -> Conectado al pin RC4  
 
