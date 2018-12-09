@@ -1,15 +1,15 @@
 
 /*
  #  HW1  #                                           ___
- #       #   1 ----- Activación Refrigerador ----->  |O| ---> RC1 / T1OSI / CCP2
+ #       #   1 ----- ActivaciÃ³n Refrigerador ----->  |O| ---> RC1 / T1OSI / CCP2
  #       #   2 ----- PWM Ventilador -------------->  |O| ---> RC2 / P1A / CCP1
- #       #   3 ----- Activación Calefactor ------->  |O| ---> RC4 / SDI / SDA
+ #       #   3 ----- ActivaciÃ³n Calefactor ------->  |O| ---> RC4 / SDI / SDA
  #       #   4 ----- Sensor Temperatura Interior ->  |O| ---> ULPWU / C12INU- / AN0 / RA0
  #       #   5 ----- Sensor Temperatura Exterior ->  |O| ---> C12IN1- / AN1 / RA1
  #       #   6 ----- Sensor Humedad -------------->  |O| ---> CVref / C2IN1+ / Vref- / AN2 / RA2
  #       #   7 ----- Sensor Intensidad Luminosa -->  |O| ---> C1IN+ / Vref+ / AN3 / RA3
- #       #   8 ----- Potenciómetro Consigna Temp ->  |O| ---> SS / C2OUT / AN4 / RA5
- # # # # #                                           ¯¯¯
+ #       #   8 ----- PotenciÃ³metro Consigna Temp ->  |O| ---> SS / C2OUT / AN4 / RA5
+ # # # # #                                           Â¯Â¯Â¯
  */
 
 #include <xc.h>
@@ -23,9 +23,9 @@
 // VARIABLES GLOBALES
 int TMR0_contador_5s = 0; // interrupts cada 0.01s (aprox) 500 interrupts = 5s.
 int TMR1_contador_5s = 0; // interrupts cada 0.1s (exacto) 50 interrupts = 5s.
-char esperaCAD; /* Esta variable va a servir para determinar quién estaba esperando al CAD {h, l, e, i}
-                   A partir de esto, podremos decirle al CAD interrupt handler quién estaba esperando el interrupt
-                   y qué es lo que debería hacer con ese interrupt */
+char esperaCAD; /* Esta variable va a servir para determinar quiÃ©n estaba esperando al CAD {h, l, e, i}
+                   A partir de esto, podremos decirle al CAD interrupt handler quiÃ©n estaba esperando el interrupt
+                   y quÃ© es lo que deberÃ­a hacer con ese interrupt */
 
 char humedad_imprimir;
 char tem_ext_imprimir;
@@ -49,34 +49,35 @@ void enviar_valores_usart() {
 
 // ###### HUMEDAD #####
 void convertir_humedad() {
-    /* Utilizamos la fórmula del HIH-4000 para obtener un porcentaje de humedad
+    /* Utilizamos la fÃ³rmula del HIH-4000 para obtener un porcentaje de humedad
        Aplicar la formula a valor y actualizar la variable a imprimir */
-    char porcentaje = 0;
-    // Obtenemos el resultado de la conversión, guardado en ADRESH:ADRESL
-    int resultado_CAD = 0;
-    resultado_CAD = ADRESH << 0;
-    resultado_CAD = resultado_CAD + ADRESL;
-    
+    float porcentaje = 0;
+    // Obtenemos el resultado de la conversiÃ³n, guardado en ADRESH:ADRESL
+    float voltHumedad = 0;
+    porcentaje = (int)(ADRESH << 8) + ADRESL;
+
     // Aplicamos la formula del HIH-4000 para obtener un porcentaje de humedad
-    
+    voltHumedad = humedad*5/1024;
+    porcentaje = (volthumedad-0.826)/0.03125 //obtenido de la tabla2 del manual 
     
     // Actualizamos la variable
     humedad_imprimir = porcentaje;
+    ADCON0bits.GO=1;
 }
 
 void leer_humedad(void) {
     /* 1. El CAD lee RA2 y convierte. El resultado se guarda en ADRESH:ADRESL
         (***)
-       2. Una vez en digital la operamos según especifica el HIH-4000 para obtener % de humedad
+       2. Una vez en digital la operamos segÃºn especifica el HIH-4000 para obtener % de humedad
        3. Ese porcentaje de humedad lo mandamos por la USART
-     (***) La conversión lleva tiempo. Podemos hacer Active Polling al bit GO_DONE (ADCON0), que
-           se pone a 0 cuando termina la conversión, o podemos esperar a la interrupción del CAD */
+     (***) La conversiÃ³n lleva tiempo. Podemos hacer Active Polling al bit GO_DONE (ADCON0), que
+           se pone a 0 cuando termina la conversiÃ³n, o podemos esperar a la interrupciÃ³n del CAD */
     
-    /* start_CAD_humedad() -> Tiene que haber un while que compruebe si el CAD está en uso o no 
-       Si está en uso tiene que esperarse hasta que no esté en uso y ahí entrar 
-       Se hace en un while para que el código no pase a la función siguiente */
+    /* start_CAD_humedad() -> Tiene que haber un while que compruebe si el CAD estÃ¡ en uso o no 
+       Si estÃ¡ en uso tiene que esperarse hasta que no estÃ© en uso y ahÃ­ entrar 
+       Se hace en un while para que el cÃ³digo no pase a la funciÃ³n siguiente */
     
-    while(ADCON0bits.GO_DONE) { } /* Mientras el CAD esté operando (El bit GO_DONE se pone a 0 cuando acaba) */
+    while(ADCON0bits.GO_DONE) { } /* Mientras el CAD estÃ© operando (El bit GO_DONE se pone a 0 cuando acaba) */
     start_CAD_humedad();
     esperaCAD = 'h';
     
@@ -87,7 +88,7 @@ void start_CAD_humedad(void) {
        El CAD usa los registros de control ADCON0 y ADCON1
        El resultado de la lectura se guarda en ADRES */
     
-    // Decidle qué frecuencia usar (01 = Fosc/8)
+    // Decidle quÃ© frecuencia usar (01 = Fosc/8)
     ADCON0bits.ADCS0 = 1;
     ADCON0bits.ADCS1 = 0;
     
@@ -97,7 +98,7 @@ void start_CAD_humedad(void) {
     ADCON0bits.CHS2 = 0;
     ADCON0bits.CHS3 = 0;
     
-    // ADCON1 también configura el CAD
+    // ADCON1 tambiÃ©n configura el CAD
     ADCON1bits.ADFM  = 1; // Justify right
     ADCON1bits.VCFG0 = 0; // Cosas de voltajes parte 1: El comienzo de VSS
     ADCON1bits.VCFG1 = 0; // Cosas de voltajes parte 2: VDD Returns
@@ -112,18 +113,19 @@ void start_CAD_humedad(void) {
 
 // ###### TEMPERATURA EXTERIOR ######
 float convertir_temperatura_x(float valor) {
-    /* Utilizamos la fórmula del MCP9700 para obtener la temperatura en ºC */
-    int temperatura = 0;
-    // Obtenemos el resultado de la conversión, guardado en ADRESH:ADRESL
-    int resultado_CAD = 0;
-    resultado_CAD = ADRESH << 0;
-    resultado_CAD = resultado_CAD + ADRESL;
-    
-    // Aplicamos la fórmula del MCP9700
-    
+    /* Utilizamos la fÃ³rmula del MCP9700 para obtener la temperatura en ÂºC */
+    float temperatura = 0;
+    // Obtenemos el resultado de la conversiÃ³n, guardado en ADRESH:ADRESL
+    float voltTexterior = 0;
+    temperatura = (int)(ADRESH << 0)+ADRESL;
+
+    // Aplicamos la fÃ³rmula del MCP9700
+    voltTexterior = temperatura*5 / 1024
+    temperatura  = (voltTexterior -0.5)/0.01; // EQUATION 4.1 manual , sustituyendo valores de mV a V
     
     // Actualizamos la variable
     tem_ext_imprimir = temperatura;
+    ADCON0bits.GO=1;
 }
 
 void leer_temperatura_x(void) {
@@ -140,7 +142,7 @@ void start_CAD_temperatura_x(void) {
        El CAD usa los registros de control ADCON0 y ADCON1
        El resultado de la lectura se guarda en ADRES */
     
-    // Decidle qué frecuencia usar (01 = Fosc/8)
+    // Decidle quÃ© frecuencia usar (01 = Fosc/8)
     ADCON0bits.ADCS0 = 1;
     ADCON0bits.ADCS1 = 0;
     
@@ -150,7 +152,7 @@ void start_CAD_temperatura_x(void) {
     ADCON0bits.CHS2 = 0;
     ADCON0bits.CHS3 = 0;
     
-    // ADCON1 también configura el CAD
+    // ADCON1 tambiÃ©n configura el CAD
     ADCON1bits.ADFM  = 1; // Justify right
     ADCON1bits.VCFG0 = 0; // Cosas de voltajes parte 1: El comienzo de VSS
     ADCON1bits.VCFG1 = 0; // Cosas de voltajes parte 2: VDD Returns
@@ -162,19 +164,20 @@ void start_CAD_temperatura_x(void) {
 
 // ###### TEMPERATURA INTERIOR ######
 float convertir_temperatura_i(float valor) {
-    /* Esto iba dado por un software particular así que ni puta idea 
-       Asumo que ese software nos lo da como nos lo daría el MCP9700 */
-    int temperatura = 0;
-    // Obtenemos el resultado de la conversión guardado en ADRESH:ADRESL
-    int resultado_CAD = 0;
-    resultado_CAD = ADRESH << 0;
-    resultado_CAD = resultado_CAD + ADRESL;
-    
-    // Aplicamos la fórmula del MCP9700
-    
+    /* Esto iba dado por un software particular asÃ­ que ni puta idea 
+       Asumo que ese software nos lo da como nos lo darÃ­a el MCP9700 */
+    float temperatura = 0;
+       // Obtenemos el resultado de la conversiÃ³n, guardado en ADRESH:ADRESL
+    float voltTinterior = 0;
+    temperatura = (int)(ADRESH << 0)+ADRESL;
+   
+    // Aplicamos la fÃ³rmula del MCP9700
+    voltTinteior = temperatura*5 / 1024
+    temperatura  = (voltTinterior -0.5)/0.01
     
     // Actualizamos la variable
     tem_int_imprimir = temperatura;
+    ADCON0bits.GO=1;
 }
 
 void leer_temperatura_i(void) {
@@ -191,7 +194,7 @@ void start_CAD_temperatura_i(void) {
        El CAD usa los registros de control ADCON0 y ADCON1
        El resultado de la lectura se guarda en ADRES */
     
-    // Decidle qué frecuencia usar (01 = Fosc/8)
+    // Decidle quÃ© frecuencia usar (01 = Fosc/8)
     ADCON0bits.ADCS0 = 1;
     ADCON0bits.ADCS1 = 0;
     
@@ -201,7 +204,7 @@ void start_CAD_temperatura_i(void) {
     ADCON0bits.CHS2 = 0;
     ADCON0bits.CHS3 = 0;
     
-    // ADCON1 también configura el CAD
+    // ADCON1 tambiÃ©n configura el CAD
     ADCON1bits.ADFM  = 1; // Justify right
     ADCON1bits.VCFG0 = 0; // Cosas de voltajes parte 1: El comienzo de VSS
     ADCON1bits.VCFG1 = 0; // Cosas de voltajes parte 2: VDD Returns
@@ -213,7 +216,15 @@ void start_CAD_temperatura_i(void) {
 
 // ###### INTENSIDAD LUMINICA ######
 float convertir_intensidad_lum(float valor) {
-    
+  float luz = 0;
+  float voltLuz = 0;
+  
+  luz = (int)(byteHigh<<8)+byteLow;
+  voltLuz = luz*5/1024;
+  luz = voltLuz /0.00038; //Lo dice el profe en el enunciado
+  
+  int_lum_imprimir = luz; 
+  ADCON0bits.GO=1;
 }
 
 void leer_intensidad_lum(void) {
@@ -230,7 +241,7 @@ void start_CAD_intensidad_lum(void) {
        El CAD usa los registros de control ADCON0 y ADCON1
        El resultado de la lectura se guarda en ADRES */
     
-    // Decidle qué frecuencia usar (01 = Fosc/8)
+    // Decidle quÃ© frecuencia usar (01 = Fosc/8)
     ADCON0bits.ADCS0 = 1;
     ADCON0bits.ADCS1 = 0;
     
@@ -240,7 +251,7 @@ void start_CAD_intensidad_lum(void) {
     ADCON0bits.CHS2 = 0;
     ADCON0bits.CHS3 = 0;
     
-    // ADCON1 también configura el CAD
+    // ADCON1 tambiÃ©n configura el CAD
     ADCON1bits.ADFM  = 1; // Justify right
     ADCON1bits.VCFG0 = 0; // Cosas de voltajes parte 1: El reinado de VSS
     ADCON1bits.VCFG1 = 0; // Cosas de voltajes parte 2: VDD Returns
@@ -259,7 +270,7 @@ void start_CAD_intensidad_lum(void) {
  * TMR0
  * TMR1
  * CAD
- * ¿USART?
+ * Â¿USART?
  */
 
 void TMR0_interrupt_handler(void) {
@@ -288,7 +299,7 @@ void TMR1_interrupt_handler(void) {
 void interrupt general_interrupt_handler(void) {
     if (PIR1bits.ADIF) {   // Interrupt del CAD
         PIR1bits.ADIF = 0; // Limpiamos el flag de interrupcion del CAD
-        // Ahora deberiamos ver quién estaba esperando al CAD (humedad, luz, t_ext o t_int)
+        // Ahora deberiamos ver quiÃ©n estaba esperando al CAD (humedad, luz, t_ext o t_int)
         switch (esperaCAD) {
             case 'h': 
                 convertir_humedad();
@@ -303,7 +314,7 @@ void interrupt general_interrupt_handler(void) {
                 convertir_intensidad_lum();
                 break;
         }
-        // ¿Apagar el CAD?
+        // Â¿Apagar el CAD?
         // ADCON0bits.ADON = 0;
         // No hace falta limpiar el bit GO_DONE porque lo hace el hw al terminar la conversion
     }
@@ -327,7 +338,7 @@ void interrupt general_interrupt_handler(void) {
  * PORTC
  * TMR0
  * TMR1
- * CAD (cada [jaja CADa ¿lo pillais?] handler de sensor inicializa el CAD a su gusto (para decirle qué patilla usar))
+ * CAD (cada [jaja CADa Â¿lo pillais?] handler de sensor inicializa el CAD a su gusto (para decirle quÃ© patilla usar))
  * USART
  */
 
@@ -343,14 +354,14 @@ void set_interrupts(void) {
 }
 
 void init_portA(void) {
-    /* Del puerto A necesitamos las patitas 0, 1, 2 y 3 en modo input (recibir la señal)
-       También necesitamos el pin 5 en modo input (recibir consigna temperatura)
+    /* Del puerto A necesitamos las patitas 0, 1, 2 y 3 en modo input (recibir la seÃ±al)
+       TambiÃ©n necesitamos el pin 5 en modo input (recibir consigna temperatura)
        PortA tiene 8 pines, y TRISA tiene 8 bits, uno por pin, de modo que:
        1 = input  (El micro recibe de fuera)
-       0 = output (El micro envía a fuera)  */
+       0 = output (El micro envÃ­a a fuera)  */
     TRISA = 0b00101111 ;
     
-    /* Además, tenemos que decirle al micro que los pines correspondientes son analógicos 
+    /* AdemÃ¡s, tenemos que decirle al micro que los pines correspondientes son analÃ³gicos 
        Es decir, todos los que usamos lo son. */
     ANSEL = 0b00101111 ;
 }
@@ -358,7 +369,7 @@ void init_portA(void) {
 void init_portC(void) {
     /* Del puerto C necesitamos las patitas 1, 2 y 4, todas en modo output (enviar valores) */
     
-    TRISC  = 0b00000000 ; // Todas en output porque me da la puta gana ¿vale?
+    TRISC  = 0b00000000 ; // Todas en output porque me da la puta gana Â¿vale?
     
     // Si necesitamos enviar los datos en digital estamos: jodidos
 }
@@ -391,7 +402,7 @@ void init_TMR1(void) {
 }
 
 void init_USART(void) {
-    /* La USART va a estar en modo asíncrono (como la hemos usado siempre) */
+    /* La USART va a estar en modo asÃ­ncrono (como la hemos usado siempre) */
     
     /* ###### BAUDCTL ###### */
     BAUDCTLbits.ABDOVF = 0; // [?] Auto-baud timer did not overflow
@@ -403,13 +414,13 @@ void init_USART(void) {
     
     /* ###### SPBRGH:SPBRG ###### */
     SPBRGH = 0;
-    SPBRG  = 9600; // Ver la tablita, creo que debería ser 32 para un valor de 9600
+    SPBRG  = 9600; // Ver la tablita, creo que deberÃ­a ser 32 para un valor de 9600
     
     /* ###### TXSTA ###### */
     TXSTAbits.TX9  = 0; // 8-bit transmission
     TXSTAbits.TXEN = 0; // Transmit disabled (purpose is resetting it)
     TXSTAbits.TXEN = 1; // Transmit enabled
-    TXSTAbits.SYNC = 0; // Modo asíncrono 
+    TXSTAbits.SYNC = 0; // Modo asÃ­ncrono 
     TXSTAbits.BRGH = 0; // No queremos High Baud Rate para transmitir
     
     /* ###### RCSTA ###### */
