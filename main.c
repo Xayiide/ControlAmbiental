@@ -41,6 +41,7 @@ void putch(char c) { // la impresión se dirige a UART
  }
 */
 
+/* Este es el putch que viene en el manual del compilador [http://microchipdeveloper.com/xc8:console-printing] */
 void putch(unsigned char data) {
     while(!PIR1bits.TXIF)
         continue;
