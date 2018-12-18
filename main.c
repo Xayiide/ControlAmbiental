@@ -23,7 +23,7 @@
 // VARIABLES GLOBALES
 int TMR0_contador_5s = 0; // interrupts cada 0.01s (aprox) 500 interrupts = 5s.
 int TMR1_contador_5s = 0; // interrupts cada 0.1s (exacto) 50 interrupts = 5s.
-char esperaCAD; /* Esta variable va a servir para determinar quién estaba esperando al CAD {h, l, e, i}
+char esperaCAD; /* Esta variable va a servir para determinar quién estaba esperando al CAD {h, l, e, i, d}
                    A partir de esto, podremos decirle al CAD interrupt handler quién estaba esperando el interrupt
                    y qué es lo que debería hacer con ese interrupt */
 
@@ -31,7 +31,7 @@ char humedad_imprimir = 10;
 char tem_ext_imprimir = 20;
 char tem_int_imprimir = 30;
 char int_lum_imprimir = 40;
-
+char dialtem_imprimir = 0;
 
 /* ========================================================================== */
 /*
@@ -135,7 +135,7 @@ void convertir_temperatura_x(void) {
     /* Obtenemos el resultado de la conversión, guardado en ADRESH:ADRESL
        Dos operaciones para que el compilador no cree variables intermedias */
     int resultado_CAD = 0;
-    resultado_CAD = ADRESH << 0;
+    resultado_CAD = ADRESH << 8;
     resultado_CAD = resultado_CAD + ADRESL;
     
     // Aplicamos la fórmula del MCP9700
@@ -192,7 +192,7 @@ void convertir_temperatura_i(void) {
     /* Obtenemos el resultado de la conversión, guardado en ADRESH:ADRESL
        Dos operaciones para que el compilador no cree variables intermedias */
     int resultado_CAD = 0;
-    resultado_CAD = ADRESH << 0;
+    resultado_CAD = ADRESH << 8;
     resultado_CAD = resultado_CAD + ADRESL;
     
     // Aplicamos la fórmula del MCP9700
@@ -248,7 +248,7 @@ void convertir_intensidad_lum(void) {
     /* Obtenemos el resultado de la conversión, guardado en ADRESH:ADRESL
        Dos operaciones para que el compilador no cree variables intermedias */
     int resultado_CAD = 0;
-    resultado_CAD = ADRESH << 0;
+    resultado_CAD = ADRESH << 8;
     resultado_CAD = resultado_CAD + ADRESL;
     
     // Aplicamos la fórmula de los requisitos
@@ -295,6 +295,53 @@ void leer_intensidad_lum(void) {
 
 
 
+// ###### CONSIGNA TEMPERATURA ######
+void comparar_dial(void) {
+    /* Obtenemos el resultado de la conversión, guardado en ADRESH:ADRESL
+       Dos operaciones para que el compilador no cree variables intermedias */
+    int resultado_CAD = 0;
+    resultado_CAD = ADRESH << 8;
+    resultado_CAD = resultado_CAD + ADRESL;
+    
+    if (resultado_CAD != dialtem_imprimir) {
+        dialtem_imprimir = resultado_CAD; // Actualizamos el valor a imprimir
+        TMR0_contador_5s = 0;             // Ponemos el contador a 0 para que cuente 5s desde ahora
+    }
+    printf("[Consigna]: %d\n\r", dialtem_imprimir);
+}
+
+void leer_consigna(void) {
+    /* El CAD lee RA5 y convierte. El resultado se guarda en ADRESH:ADRESL */
+    
+    while(ADCON0bits.GO_DONE) { }
+    start_CAD_consigna();
+    esperaCAD = 'd';
+}
+
+void start_CAD_consigna(void) {
+    /* Inicializa la CAD para leer la consigna de temperatura
+       El CAD usa los registros de control ADCON0 y ADCON1
+       El resultado de la lectura se guarda en ADRES */
+    
+    // Decidle qué frecuencia usar (01 = Fosc/8)
+    ADCON0bits.ADCS0 = 1;
+    ADCON0bits.ADCS1 = 0;
+    
+    // Decidle que usamos la patita AN5 (RA5) (PIC16F886 pag 104)
+    ADCON0bits.CHS0 = 1;
+    ADCON0bits.CHS1 = 0;
+    ADCON0bits.CHS2 = 1;
+    ADCON0bits.CHS3 = 0;
+    
+    // ADCON1 también configura el CAD
+    ADCON1bits.ADFM  = 1; // Justify right
+    ADCON1bits.VCFG0 = 0; // Cosas de voltajes parte 1: El reinado de VSS
+    ADCON1bits.VCFG1 = 0; // Cosas de voltajes parte 2: VDD Returns
+    
+    // Arrancar el CAD: (ADON lo enciende, GO_DONE le dice que empiece a currar)
+    ADCON0bits.ADON    = 1;
+    // ADCON0bits.GO_DONE = 1;  
+}
 
 /* ========================================================================== */
 
@@ -310,14 +357,21 @@ void leer_intensidad_lum(void) {
 void TMR0_interrupt_handler(void) {
     TMR0_contador_5s++;
     if (TMR0_contador_5s == 500) {
-        // Leemos todos los putos sensores, imprimimos y ponemos el cont. a 0   
-        //printf("TMR0 ha contado 5s.\n\r");
-        TMR0_contador_5s = 0;
+        /* Han pasado 5 segundos desde que dejaron quieto el dial de temperatura */
+        /* Mandamos las cosas al refrigerador/calefactor y ventilador */
+         
+       
+        
+        TMR0_contador_5s = 0; // Lo ponemos a cero de nuevo
     }
 }
 
 void TMR1_interrupt_handler(void) {
     TMR1_contador_5s++;
+    if (TMR1_contador_5s % 5 == 0) { /* Esto tiene pinta de llevar mazo ciclos en cálculos y puede que otro contador sea buena idea */
+        printf("TMR1 ha contado 0.5s.\n\r");
+        leer_consigna(); 
+   }
     if (TMR1_contador_5s == 50) {
         // Leemos todos los putos sensores, imprimimos y ponemos el cont. a 0
         printf("TMR1 ha contado 5s.\n\r");
@@ -347,6 +401,10 @@ void interrupt general_interrupt_handler(void) {
             case 'l':
                 convertir_intensidad_lum();
                 break;
+            case 'd':
+                comparar_dial();
+                break;
+                
         }
         // ¿Apagar el CAD?
         // ADCON0bits.ADON = 0;
@@ -415,7 +473,7 @@ void init_TMR0(void) {
     OPTION_REGbits.PS   = 0b111; // Prescaler to 1:256 (Comes in a chart)
     TMR0                = 61;    // Counts 0.00993280 sec. Closest value to 0.01 possible
     INTCONbits.T0IF     = 0;     // Clear interrupt flag (just in case)
-    // INTCONbits.T0IE     = 1;     // Allow TMR0 interrupts // MOVED TO enable_interrupts(void)
+    // INTCONbits.T0IE     = 1;     // Allow TMR0 interrupts // MOVED TO set_interrupts(void)
 }
 
 void init_TMR1(void) {
@@ -482,6 +540,9 @@ void main(void) {
     printf("Bienvenido al sistema de control to wapo\n\r");
     ADCON0bits.GO_DONE = 0; // TODO: Cambiarlo de lugar que aquí queda feo
     while (1);
+    
+    /* Pregunta mazo seria. ¿En algún momento tenemos que desactivar las interrupts generales?
+       ¿Anidamiento de interrupts? ¿Eso existe? */
 }
 
 
