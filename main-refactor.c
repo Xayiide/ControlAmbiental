@@ -93,7 +93,7 @@ void leer_humedad(void) {
        Si está en uso tiene que esperarse hasta que no esté en uso y ahí entrar
        Se hace en un while para que el código no pase a la función siguiente */
 
-    while(ADCON0bits.GO_DONE) { } /* Mientras el CAD esté operando (El bit GO_DONE se pone a 0 cuando acaba) */
+    while(ADCON0bits.GO_DONE); /* Mientras el CAD esté operando (El bit GO_DONE se pone a 0 cuando acaba) */
 
     // Decidle que usamos la patita AN2 (RA2) (PIC16F886 pag 106)
     ADCON0bits.CHS0 = 0;
@@ -128,7 +128,7 @@ void convertir_temperatura_x(void) {
 void leer_temperatura_x(void) {
     /* El CAD lee RA1 y convierte. El resultado se guarda en ADRESH:ADRESL */
 
-    while(ADCON0bits.GO_DONE) { }
+    while(ADCON0bits.GO_DONE);
 
     // Decidle que usamos la patita AN1 (RA1) (PIC16F886 pag 106)
     ADCON0bits.CHS0 = 1;
@@ -166,7 +166,7 @@ void convertir_temperatura_i(void) {
 void leer_temperatura_i(void) {
     /* El CAD lee RA0 y convierte. El resultado se guarda en ADRESH:ADRESL */
 
-    while(ADCON0bits.GO_DONE) { }
+    while(ADCON0bits.GO_DONE);
 
     // Decidle que usamos la patita AN0 (RA0) (PIC16F886 pag 106)
     ADCON0bits.CHS0 = 0;
@@ -203,7 +203,7 @@ void convertir_intensidad_lum(void) {
 void leer_intensidad_lum(void) {
     /* El CAD lee RA3 y convierte. El resultado se guarda en ADRESH:ADRESL */
 
-    while(ADCON0bits.GO_DONE) { }
+    while(ADCON0bits.GO_DONE);
 
     // Decidle que usamos la patita AN3 (RA3) (PIC16F886 pag 106)
     ADCON0bits.CHS0 = 1;
@@ -234,7 +234,7 @@ void comparar_dial(void) {
 void leer_consigna(void) {
     /* El CAD lee RA5 y convierte. El resultado se guarda en ADRESH:ADRESL */
 
-    while(ADCON0bits.GO_DONE) { }
+    while(ADCON0bits.GO_DONE);
 
     // Decidle que usamos la patita AN5 (RA5) (PIC16F886 pag 104)
     ADCON0bits.CHS0 = 1;
