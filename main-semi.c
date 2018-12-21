@@ -39,6 +39,7 @@ char consigna_grados(void) {
        de temperatura. 
        Voltaje de 0 a 3 V   -> Temperaturas de 17 a 28 grados centigrados
        Voltaje de 3 a 3.8 V -> Sistema apagado */
+    return dit_imprimir; // Deberia retornar algo con sentido
 }
 
 
@@ -66,9 +67,9 @@ void leer_luz(void) {
     voltLuz = resultado_CAD * 5 / 1024;
     luz     = (char) (voltLuz / 0.00038);
 
-    //luz_imprimir = luz; // Descomentar
-    // trampa
-    luz_imprimir++;
+    luz_imprimir = luz;
+    /* Trampas para poder probarlo
+    luz_imprimir++; */
 }
 
 float voltHumedad = 0;
@@ -94,9 +95,9 @@ void leer_humedad(void) {
     voltHumedad = resultado_CAD * 5.0 / 1024;
     porcentaje  = (char) (voltHumedad - 0.826) / 0.03125;
 
-    //hum_imprimir = porcentaje; // Este es el codigo que mola, hay que descomentarlo
-    // Trampa
-    hum_imprimir++;
+    hum_imprimir = porcentaje;
+    /* Trampas para poder probarlo
+    hum_imprimir++; */
 }
 
 float voltExterior = 0;
@@ -122,9 +123,9 @@ void leer_tem_x(void) {
     voltExterior = resultado_CAD * 5 / 1024;
     tempExterior = (char) (voltExterior - 0.5) * 100;
 
-    //tex_imprimir = tempExterior; // Descomentar
-    // Trampas
-    tex_imprimir++;
+    tex_imprimir = tempExterior;
+    /* Trampas para poder probarlo
+    tex_imprimir++; */
 }
 
 float voltInterior = 0;
@@ -150,9 +151,9 @@ void leer_tem_i(void) {
     voltInterior = resultado_CAD * 5 / 1024;
     tempInterior = (char) (voltInterior - 0.5) * 100;
 
-    //tin_imprimir = tempInterior; // Descomentar
-    // Trampas
-    tin_imprimir++;
+    tin_imprimir = tempInterior;
+    /* Trampas para poder probarlo
+    tin_imprimir++; */
 }
 
 void leer_consigna(void) {
@@ -172,9 +173,9 @@ void leer_consigna(void) {
     
     
     if (resultado_CAD != dit_imprimir) { // lo que lee del CAD no coincide con el ultimo valor: ha cambiado
-        //dit_imprimir = consigna_grados(); // Actualizamos el valor a imprimir. Hay que convertir a grados centigrados
-        // Trampa
-        dit_imprimir++;
+        dit_imprimir = consigna_grados(); // Actualizamos el valor a imprimir. Hay que convertir a grados centigrados
+        /* Trampas para poder probarlo
+        dit_imprimir++; */
         TMR0_contador_5s = 0;             // Ponemos el contador a 0 para que cuente 5s desde ahora
     }
     printf("Valor consigna: [%d] [0x%x]\n\r", dit_imprimir, dit_imprimir);
