@@ -9,13 +9,16 @@
 
 
 char TMR1_contador_5s = 0;
-char luz_imprimir     = 0;
-char hum_imprimir     = 0;
-char tex_imprimir     = 0;
-char tin_imprimir     = 0;
-
+char TMR0_contador_5s = 0;
 int  resultado_CAD = 0;
-char esperaCAD     = 0;
+
+
+char luz_imprimir     = 0; // Luz
+char hum_imprimir     = 0; // Humedad
+char tex_imprimir     = 0; // Temperatura exterior
+char tin_imprimir     = 0; // Temperatura interior
+char dit_imprimir     = 1; // Dial de temperatura. La temp. "objetivo"
+
 
 
 void putch(unsigned char data) {
@@ -29,6 +32,7 @@ void enviar_usart(void) {
     printf("Tin: [%d] [0x%x]\n\r", tin_imprimir, tin_imprimir);
     printf("Tex: [%d] [0x%x]\n\r", tex_imprimir, tex_imprimir);
     printf("Hum: [%d] [0x%x]\n\r", hum_imprimir, hum_imprimir);
+    printf("Dit: [%d] [0x%x]\n\r", dit_imprimir, dit_imprimir);
 }
 
 
@@ -44,7 +48,6 @@ void leer_luz(void) {
     ADCON0bits.CHS3    = 0;
     
     ADCON0bits.GO_DONE = 1;
-    esperaCAD = 'l';
     
     while(ADCON0bits.GO_DONE);
 
@@ -99,7 +102,6 @@ void leer_tem_x(void) {
     ADCON0bits.CHS3    = 0;
     
     ADCON0bits.GO_DONE = 1;
-    esperaCAD = 'x';
     
     while(ADCON0bits.GO_DONE);
 
@@ -126,7 +128,6 @@ void leer_tem_i(void) {
     ADCON0bits.CHS3    = 0;
     
     ADCON0bits.GO_DONE = 1;
-    esperaCAD = 'i';
     
     while(ADCON0bits.GO_DONE);
     
@@ -145,34 +146,60 @@ void leer_tem_i(void) {
     tin_imprimir++;
 }
 
-
-
-
-
-void init_CAD(void) {
-    /* Inicializa la CAD para leer la humedad
-       El CAD usa los registros de control ADCON0 y ADCON1
-       El resultado de la lectura se guarda en ADRES */
+void leer_consigna(void) {
+    ADCON0bits.CHS0    = 1;
+    ADCON0bits.CHS1    = 0;
+    ADCON0bits.CHS2    = 1;
+    ADCON0bits.CHS3    = 0;
     
-    // Decidle quï¿½ frecuencia usar (01 = Fosc/8)
-    ADCON0bits.ADCS0 = 1;
-    ADCON0bits.ADCS1 = 0;
+    ADCON0bits.GO_DONE = 1;
+    
+    while(ADCON0bits.GO_DONE);
+    
+    resultado_CAD = 0;
+    resultado_CAD = ADRESH << 8;
+    resultado_CAD = resultado_CAD + ADRESL;
+    
+    if (resultado_CAD != dit_imprimir) { // lo que lee del CAD no coincide con el último valor: ha cambiado
+        //dit_imprimir = convertir_a_grados(resultado_CAD); // Actualizamos el valor a imprimir. Hay que convertir a grados centigrados
+        // Trampa
+        dit_imprimir++;
+        TMR0_contador_5s = 0;             // Ponemos el contador a 0 para que cuente 5s desde ahora
+    }
+    printf("Valor consigna: [%d] [0x%x]\n\r", dit_imprimir, dit_imprimir);
+}
 
-    // ADCON1 tambiï¿½n configura el CAD
-    ADCON1bits.ADFM  = 1; // Justify right
-    ADCON1bits.VCFG0 = 0; // Cosas de voltajes parte 1: El comienzo de VSS
-    ADCON1bits.VCFG1 = 0; // Cosas de voltajes parte 2: VDD Returns
+void evaluar_consigna(void) {
+    if (tin_imprimir < dit_imprimir) { // resultado_CAD == dit_imprimir
+        // Activar calefactor
+        // Activar ventilador con los valores que sean
+    }
+    else if (tin_imprimir > dit_imprimir) {
+        // Activar refrigerador
+        // Activar ventilador con los valores que sean
+    }
+    else {
+       // continue; // Do nothing
+    }
+}
 
-    // Arrancar el CAD: (ADON lo enciende, GO_DONE le dice que empiece a currar)
-    ADCON0bits.ADON    = 1;
-    // ADCON0bits.GO_DONE = 1;
 
+
+void TMR0_interrupt_handler(void) {
+    TMR0_contador_5s++;
+    if (TMR0_contador_5s == 500) {
+        /* Han pasado 5 segundos desde que dejaron quieto el dial de temperatura */
+        /* Mandamos las cosas al refrigerador/calefactor y ventilador */
+        evaluar_consigna();
+        TMR0_contador_5s = 0; // Lo ponemos a cero de nuevo
+    }
 }
 
 void TMR1_interrupt_handler(void) {
     TMR1_contador_5s++;
     if (TMR1_contador_5s % 5 == 0) {
         // printf("TMR1 ha contado 0.5s. Leemos Consigna\n\r");
+        leer_consigna();
    }
     if (TMR1_contador_5s == 50) {
         // printf("TMR1 ha contado 5s. Imprimimos sensor\n\r");
@@ -193,9 +220,41 @@ void interrupt general_interrupt_handler(void) {
         PIR1bits.TMR1IF = 0;    // Limpiamos el flag de interrupcion de TMR1
         TMR1_interrupt_handler();
     }
+    else if (INTCONbits.T0IF) { // TMR0 Interrumpe cada 0.01s
+        INTCONbits.T0IF = 0;    // Limpiamos el flag de interrupcion de TMR0
+        TMR0_interrupt_handler();
+    }
 }
 
 
+
+
+void init_CAD(void) {
+    
+    // Decidle quï¿½ frecuencia usar (01 = Fosc/8)
+    ADCON0bits.ADCS0 = 1;
+    ADCON0bits.ADCS1 = 0;
+
+    // ADCON1 tambiï¿½n configura el CAD
+    ADCON1bits.ADFM  = 1; // Justify right
+    ADCON1bits.VCFG0 = 0; // Cosas de voltajes parte 1: El comienzo de VSS
+    ADCON1bits.VCFG1 = 0; // Cosas de voltajes parte 2: VDD Returns
+
+    // Arrancar el CAD: (ADON lo enciende, GO_DONE le dice que empiece a currar)
+    ADCON0bits.ADON    = 1;
+    // ADCON0bits.GO_DONE = 1;
+
+}
+
+void init_TMR0(void) {
+    OPTION_REG = 0b00000000;     // Inicializado a 0 para que no haya trash values
+    OPTION_REGbits.T0CS = 0;     // Set the internal instruction cycle (Fosc/4) as the cycle clock
+    OPTION_REGbits.PSA  = 0;     // Set the Prescaler to TMR0 instead of WDT (0=TMR0 1=WDT)
+    OPTION_REGbits.PS   = 0b111; // Prescaler to 1:256 (Comes in a chart)
+    TMR0                = 61;    // Counts 0.00993280 sec. Closest value to 0.01 possible
+    INTCONbits.T0IF     = 0;     // Clear interrupt flag (just in case)
+    // INTCONbits.T0IE     = 1;     // Allow TMR0 interrupts // MOVED TO set_interrupts(void)
+}
 
 void init_TMR1(void) {
     T1CONbits.T1CKPS  = 11; // T1CKPS1:T1CKPS0 = 11 -> Prescalado 1:8
@@ -248,6 +307,7 @@ void main(void) {
     init_USART();
     init_CAD();
     init_TMR1();
+    init_TMR0();
     
     
     printf("##### BANNER ######\n\r");
