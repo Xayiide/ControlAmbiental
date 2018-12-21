@@ -30,4 +30,4 @@ El potenciómetro marcará la temperatura objetivo, de modo que:
 
 También se activará un ventilador (conectado al pin RC2), pero no sabemos todavía el criterio que seguirá  
 
-El potenciómetro enviará al micro la nueva consigna de temperatura 5 segundos después de que el potenciómetro deje de moverse. De este modo, si movemos mucho al azar el potenciómetro, no mareamos al regrigerador ni al calefactor.
+El potenciómetro enviará al micro la nueva consigna de temperatura 5 segundos después de que el potenciómetro deje de moverse. De este modo, si movemos mucho al azar el potenciómetro, no mareamos al refrigerador ni al calefactor.
