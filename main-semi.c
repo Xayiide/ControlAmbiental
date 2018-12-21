@@ -32,7 +32,6 @@ void enviar_usart(void) {
     printf("Tin: [%d] [0x%x]\n\r", tin_imprimir, tin_imprimir);
     printf("Tex: [%d] [0x%x]\n\r", tex_imprimir, tex_imprimir);
     printf("Hum: [%d] [0x%x]\n\r", hum_imprimir, hum_imprimir);
-    printf("Dit: [%d] [0x%x]\n\r", dit_imprimir, dit_imprimir);
 }
 
 
